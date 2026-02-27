@@ -49,6 +49,8 @@ namespace HelloWorld
             var readTask = Task.Run(async () =>
             {
                 Console.WriteLine("Waiting for data...");
+                HelloWorldMessage lastPrintedMessage = default;
+                var hasPrintedMessage = false;
 
                 while (!readCancellation.Token.IsCancellationRequested)
                 {
@@ -65,9 +67,14 @@ namespace HelloWorld
                             hasSample = true;
                         }
 
-                        if (hasSample)
+                        if (hasSample &&
+                            (!hasPrintedMessage ||
+                             latestMessage.Id != lastPrintedMessage.Id ||
+                             latestMessage.Message != lastPrintedMessage.Message))
                         {
                             Console.WriteLine($"Received latest: [{latestMessage.Id}] {latestMessage.Message}");
+                            lastPrintedMessage = latestMessage;
+                            hasPrintedMessage = true;
                         }
                     }
                     catch (OperationCanceledException)
