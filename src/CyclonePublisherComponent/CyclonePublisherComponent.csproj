@@ -8,6 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eclipse.CycloneDDS" Version="0.11.0" />
+    <PackageReference Include="CycloneDDS.NET" Version="0.1.25" />
   </ItemGroup>
 </Project>
