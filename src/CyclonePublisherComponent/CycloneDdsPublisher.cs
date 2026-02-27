@@ -1,30 +1,23 @@
-using DDS;
+using CycloneDDS;
 
 namespace CyclonePublisherComponent;
 
 /// <summary>
-/// Publishes <see cref="SimpleMessage"/> samples to Cyclone DDS.
+/// Publishes <see cref="SimpleMessage"/> samples to Cyclone DDS using the pjanec/CycloneDds.NET implementation.
 /// </summary>
 public sealed class CycloneDdsPublisher : IDisposable
 {
-    private readonly IDomainParticipant _participant;
-    private readonly ITopic<SimpleMessage> _topic;
-    private readonly IPublisher _publisher;
-    private readonly IDataWriter<SimpleMessage> _writer;
+    private readonly DomainParticipant _participant;
+    private readonly Topic<SimpleMessage> _topic;
+    private readonly Publisher _publisher;
+    private readonly DataWriter<SimpleMessage> _writer;
 
     public CycloneDdsPublisher(string topicName = "SimpleTopic", int domainId = 0)
     {
-        _participant = DomainParticipantFactory.Instance.CreateParticipant(domainId)
-            ?? throw new InvalidOperationException("Unable to create DDS DomainParticipant.");
-
-        _topic = _participant.CreateTopic<SimpleMessage>(topicName)
-            ?? throw new InvalidOperationException($"Unable to create DDS topic '{topicName}'.");
-
-        _publisher = _participant.CreatePublisher()
-            ?? throw new InvalidOperationException("Unable to create DDS Publisher.");
-
-        _writer = _publisher.CreateDataWriter(_topic)
-            ?? throw new InvalidOperationException("Unable to create DDS DataWriter.");
+        _participant = new DomainParticipant(domainId);
+        _topic = new Topic<SimpleMessage>(_participant, topicName);
+        _publisher = new Publisher(_participant);
+        _writer = new DataWriter<SimpleMessage>(_publisher, _topic);
     }
 
     public void Publish(string message)

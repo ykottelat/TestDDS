@@ -1,6 +1,6 @@
 # TestDDS - Cyclone DDS C# Publisher (CycloneDDS.NET)
 
-This repository now contains a C# component that publishes a simple topic to a Cyclone DDS domain.
+This repository now contains a C# component that publishes a simple topic to a Cyclone DDS domain using the pjanec/CycloneDds.NET implementation.
 
 ## Project
 
@@ -16,7 +16,7 @@ dotnet restore
 dotnet run
 ```
 
-> Dependency: [`CycloneDDS.NET` 0.1.25](https://www.nuget.org/packages/CycloneDDS.NET/0.1.25)
+> Dependency: [`CycloneDDS.NET` 0.1.25](https://www.nuget.org/packages/CycloneDDS.NET/0.1.25) from [pjanec/CycloneDds.NET](https://github.com/pjanec/CycloneDds.NET).
 
 By default it publishes on:
 
