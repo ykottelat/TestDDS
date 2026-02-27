@@ -6,7 +6,8 @@ This repository now contains a C# component that publishes a simple topic to a C
 
 - `src/CyclonePublisherComponent/CycloneDdsPublisher.cs`: reusable publisher component.
 - `src/CyclonePublisherComponent/SimpleMessage.cs`: simple topic type.
-- `src/CyclonePublisherComponent/Program.cs`: runnable example that publishes once per second.
+- `src/CyclonePublisherComponent/CycloneDdsSubscriber.cs`: reusable subscriber component.
+- `src/CyclonePublisherComponent/Program.cs`: runnable example that publishes and receives on separate threads.
 
 ## Run
 
@@ -23,5 +24,7 @@ By default it publishes on:
 - Domain ID: `0`
 - Topic Name: `SimpleTopic`
 - Type: `SimpleMessage` (`Message`, `TimestampUnixMs`)
+
+The sample starts dedicated sender and receiver threads (`TaskCreationOptions.LongRunning`) so publishing and receiving run concurrently.
 
 Press `Ctrl+C` to stop.
