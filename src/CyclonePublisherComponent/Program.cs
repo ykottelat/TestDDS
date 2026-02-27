@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using CycloneDDS.Core;
 using CycloneDDS.Runtime;
@@ -24,26 +25,16 @@ namespace HelloWorld
             // Create a participant
             using var participant = new DdsParticipant();
 
-            // Create a wrapper for topic registration handled internally by Writer/Reader
-
             // Create a writer - topic name "HelloWorldTopic" automatically used from [DdsTopic] attribute
             using var writer = new DdsWriter<HelloWorldMessage>(participant);
 
             // Create a reader - topic name "HelloWorldTopic" automatically used from [DdsTopic] attribute
             using var reader = new DdsReader<HelloWorldMessage>(participant);
 
-            // Local helper to read synchronously
-            void ReadSamples()
-            {
-                using var samples = reader.Read();
-                foreach (var sample in samples)
-                {
-                    Console.WriteLine($"Received: [{sample.Data.Id}] {sample.Data.Message}");
-                }
-            }
+            using var readCancellation = new CancellationTokenSource();
 
-            // Task to write data
-            var writeTask = Task.Run(async () =>
+            // Publisher thread
+            var publishTask = Task.Run(async () =>
             {
                 for (int i = 0; i < 10; i++)
                 {
@@ -54,23 +45,37 @@ namespace HelloWorld
                 }
             });
 
-            // Read data
-            Console.WriteLine("Waiting for data...");
-            for (int i = 0; i < 20; i++)
+            // Reader thread
+            var readTask = Task.Run(async () =>
             {
-                try
-                {
-                    // Simple reading loop
-                    await Task.Delay(250);
-                    ReadSamples();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Read error: {ex.Message}");
-                }
-            }
+                Console.WriteLine("Waiting for data...");
 
-            await writeTask;
+                while (!readCancellation.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await Task.Delay(250, readCancellation.Token);
+                        using var samples = reader.Read();
+                        foreach (var sample in samples)
+                        {
+                            Console.WriteLine($"Received: [{sample.Data.Id}] {sample.Data.Message}");
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Expected during shutdown.
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Read error: {ex.Message}");
+                    }
+                }
+            }, readCancellation.Token);
+
+            await publishTask;
+            readCancellation.Cancel();
+            await readTask;
+
             Console.WriteLine("Done.");
         }
     }
