@@ -56,9 +56,18 @@ namespace HelloWorld
                     {
                         await Task.Delay(250, readCancellation.Token);
                         using var samples = reader.Read();
+                        HelloWorldMessage latestMessage = default;
+                        var hasSample = false;
+
                         foreach (var sample in samples)
                         {
-                            Console.WriteLine($"Received: [{sample.Data.Id}] {sample.Data.Message}");
+                            latestMessage = sample.Data;
+                            hasSample = true;
+                        }
+
+                        if (hasSample)
+                        {
+                            Console.WriteLine($"Received latest: [{latestMessage.Id}] {latestMessage.Message}");
                         }
                     }
                     catch (OperationCanceledException)
