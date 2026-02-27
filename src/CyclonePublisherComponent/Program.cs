@@ -1,20 +1,77 @@
-using CyclonePublisherComponent;
+using System;
+using System.Threading.Tasks;
+using CycloneDDS.Core;
+using CycloneDDS.Runtime;
+using CycloneDDS.Schema;
 
-using var cts = new CancellationTokenSource();
-Console.CancelKeyPress += (_, e) =>
+namespace HelloWorld
 {
-    e.Cancel = true;
-    cts.Cancel();
-};
+    [DdsTopic("HelloWorldTopic")]
+    public partial struct HelloWorldMessage
+    {
+        [DdsKey]
+        public int Id;
+        [DdsManaged]
+        public string Message;
+    }
 
-using var publisher = new CycloneDdsPublisher(topicName: "SimpleTopic", domainId: 0);
-Console.WriteLine("Publishing to DDS topic 'SimpleTopic'. Press Ctrl+C to stop.");
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            Console.WriteLine("Starting CycloneDDS.NET Hello World...");
 
-try
-{
-    await publisher.PublishPeriodicallyAsync("Hello from C# Cyclone DDS publisher", TimeSpan.FromSeconds(1), cts.Token);
-}
-catch (OperationCanceledException)
-{
-    Console.WriteLine("Stopping publisher.");
+            // Create a participant
+            using var participant = new DdsParticipant();
+
+            // Create a wrapper for topic registration handled internally by Writer/Reader
+
+            // Create a writer - topic name "HelloWorldTopic" automatically used from [DdsTopic] attribute
+            using var writer = new DdsWriter<HelloWorldMessage>(participant);
+
+            // Create a reader - topic name "HelloWorldTopic" automatically used from [DdsTopic] attribute
+            using var reader = new DdsReader<HelloWorldMessage>(participant);
+
+            // Local helper to read synchronously
+            void ReadSamples()
+            {
+                using var samples = reader.Read();
+                foreach (var sample in samples)
+                {
+                    Console.WriteLine($"Received: [{sample.Data.Id}] {sample.Data.Message}");
+                }
+            }
+
+            // Task to write data
+            var writeTask = Task.Run(async () =>
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    await Task.Delay(500);
+                    var msg = new HelloWorldMessage { Id = i, Message = $"Hello World {i}" };
+                    Console.WriteLine($"Writing: {msg.Message}");
+                    writer.Write(msg);
+                }
+            });
+
+            // Read data
+            Console.WriteLine("Waiting for data...");
+            for (int i = 0; i < 20; i++)
+            {
+                try
+                {
+                    // Simple reading loop
+                    await Task.Delay(250);
+                    ReadSamples();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Read error: {ex.Message}");
+                }
+            }
+
+            await writeTask;
+            Console.WriteLine("Done.");
+        }
+    }
 }
